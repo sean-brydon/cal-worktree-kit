@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(__dirname+'/proxy.go','utf8').split('<script>')[1].split('let paused=')[0];
+const context={document:{createElement:()=>({style:{},textContent:''}),createTextNode:text=>({textContent:text})}};
+vm.createContext(context);vm.runInContext(source,context);
+const target={nodes:[],replaceChildren(){this.nodes=[]},append(n){this.nodes.push(n)}};
+context.renderAnsi(target,'\x1b[31mred\x1b[0m plain');
+assert.equal(target.nodes.find(n=>n.textContent==='red').style.color,'#ff7b83');
+assert.equal(target.nodes.find(n=>n.textContent===' plain').style.color,'');
+context.renderAnsi(target,'\x1b[38;2;12;34;56mRGB\x1b[0m');
+assert.equal(target.nodes.find(n=>n.textContent==='RGB').style.color,'rgb(12,34,56)');
+context.renderAnsi(target,'\x1b[38;5;196m256\x1b[0m');
+assert.equal(target.nodes.find(n=>n.textContent==='256').style.color,'rgb(255,0,0)');
+context.renderAnsi(target,'ERROR <img src=x onerror=alert(1)>');
+assert.equal(target.nodes[0].style.color,'#ff7b83');assert.equal(target.nodes[0].textContent,'ERROR <img src=x onerror=alert(1)>');
+context.renderAnsi(target,'\x1b]8;;https://example.com\x07link\x1b]8;;\x07');
+assert.equal(target.nodes.map(n=>n.textContent).join(''),'link\n');
+console.log('ANSI colours, reset, RGB, 256-colour, plain severity and text-only rendering passed');

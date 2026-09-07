@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+config.json
+sharing.json
+routes/
+*.pem
+*.key
+*.dump
+*.sql
+*.log
+proxy
+proxy.new
+.DS_Store
